@@ -8,13 +8,17 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/kodekloudhub/jenkins-project.git', branch: 'main'
+                git url: 'https://github.com/koussayMed/CI-CD-KodeKloud.git', branch: 'main'
                 sh "ls -ltr"
             }
         }
         stage('Setup') {
             steps {
-                sh "pip install -r requirements.txt"
+                sh '''
+                sudo apt update
+                sudo apt install python3 python3-pip -y
+                pip install -r requirements.txt
+                '''
             }
         }
         stage('Test') {
