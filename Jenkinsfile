@@ -17,16 +17,17 @@ pipeline {
                 sh "pip install -r requirements.txt"
             }
         }
-        stage('Test') {
+       stage('Test') {
             steps {
                 sh '''
                 python3 -m venv venv
-                source venv/bin/activate
+                . venv/bin/activate
                 pip install pytest
                 pytest
                 '''
             }
         }
+
 
         stage('Login to Docker Hub') {
             steps {
