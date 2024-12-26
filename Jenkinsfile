@@ -19,10 +19,15 @@ pipeline {
         }
         stage('Test') {
             steps {
-                sh "pytest"
-                sh "whoami"
+                sh '''
+                python3 -m venv venv
+                source venv/bin/activate
+                pip install pytest
+                pytest
+                '''
             }
         }
+
         stage('Login to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
