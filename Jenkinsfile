@@ -53,11 +53,32 @@ pipeline {
             }
         }
 
+        stage('Trivy Scan') {
+            steps {
+                sh "trivy image --format html ${IMAGE_TAG} > trivy_report.html" 
+            }
+        }
+
         stage('Push Docker Image') {
             steps {
                 sh 'docker push ${IMAGE_TAG}'
                 echo "Docker image pushed successfully"
             }
+        }
+    }
+    post{
+        success {
+        // Send email notification on successful build
+            emailaction(
+            subject: "CI/CD Pipeline - Build Successful for ${IMAGE_NAME}:${env.BUILD_NUMBER}",
+            body: "The build for image ${IMAGE_NAME}:${env.BUILD_NUMBER} has completed successfully. \n Trivy scan report attached.",
+            recipient: 'your_email@example.com',
+                attachments: [
+                
+                    (file: 'trivy_report.html', contentType: 'text/html')
+            
+                ]   
+            )
         }
     }
 }
