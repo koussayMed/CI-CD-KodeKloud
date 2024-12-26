@@ -12,22 +12,29 @@ pipeline {
                 sh "ls -ltr"
             }
         }
+
         stage('Setup') {
             steps {
+                // Install dependencies from requirements.txt (which should include Flask)
                 sh "pip install -r requirements.txt"
             }
         }
-       stage('Test') {
+
+        stage('Test') {
             steps {
                 sh '''
+                # Create and activate virtual environment
                 python3 -m venv venv
                 . venv/bin/activate
-                pip install pytest
+
+                # Install necessary Python dependencies (including Flask)
+                pip install -r requirements.txt
+
+                # Run the tests
                 pytest
                 '''
             }
         }
-
 
         stage('Login to Docker Hub') {
             steps {
@@ -37,6 +44,7 @@ pipeline {
                 echo 'Login successfully'
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t ${IMAGE_TAG} .'
@@ -44,6 +52,7 @@ pipeline {
                 sh "docker images"
             }
         }
+
         stage('Push Docker Image') {
             steps {
                 sh 'docker push ${IMAGE_TAG}'
