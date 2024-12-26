@@ -55,7 +55,7 @@ pipeline {
 
         stage('Trivy Scan') {
             steps {
-                sh "trivy image --format html ${IMAGE_TAG} > trivy_report.html" 
+                sh "trivy image --format json --output trivy_report.json ${IMAGE_TAG}"
             }
         }
 
@@ -66,18 +66,14 @@ pipeline {
             }
         }
     }
-    post{
+    post {
         success {
-        // Send email notification on successful build
-            emailaction(
-            subject: "CI/CD Pipeline - Build Successful for ${IMAGE_NAME}:${env.BUILD_NUMBER}",
-            body: "The build for image ${IMAGE_NAME}:${env.BUILD_NUMBER} has completed successfully. \n Trivy scan report attached.",
-            recipient: 'your_email@example.com',
-                attachments: [
-                
-                    (file: 'trivy_report.html', contentType: 'text/html')
-            
-                ]   
+            // Send email notification on successful build
+            emailext(
+                subject: "CI/CD Pipeline - Build Successful for ${IMAGE_NAME}:${env.BUILD_NUMBER}",
+                body: "The build for image ${IMAGE_NAME}:${env.BUILD_NUMBER} has completed successfully. \n Trivy scan report attached.",
+                recipientProviders: [[$class: 'DevelopersRecipientProvider']],
+                attachmentsPattern: 'trivy_report.json'
             )
         }
     }
