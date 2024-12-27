@@ -82,6 +82,8 @@ pipeline {
         emailext(
             subject: "Pipeline Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
             body: """
+            Hi, I'm Koussay.
+
             The pipeline completed successfully.
 
             Job: ${env.JOB_NAME}
@@ -90,6 +92,7 @@ pipeline {
 
             Trivy scan results are attached.
             """,
+            from: 'koussayfattoum480@gmail.com',
             to: 'koussayfattoum480@gmail.com',
             attachmentsPattern: 'trivy_report.json'
         )
@@ -106,10 +109,12 @@ pipeline {
 
             Please review the logs and Trivy scan results.
             """,
+            from: 'koussayfattoum480@gmail.com',
             to: 'koussayfattoum480@gmail.com',
             attachmentsPattern: 'trivy_report.json'
         )
     }
 }
+
 
 }
