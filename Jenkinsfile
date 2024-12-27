@@ -78,21 +78,38 @@ pipeline {
     }
 
     post {
-        success {
-            emailext(
-                subject: "CI/CD Pipeline Success: ${IMAGE_NAME}:${env.BUILD_NUMBER}",
-                body: "The CI/CD pipeline completed successfully for image: ${IMAGE_TAG}. \n\nTrivy scan results are attached.",
-                to: 'koussayfattoum480@gmail.com',
-                attachmentsPattern: 'trivy_report.json'
-            )
-        }
-        failure {
-            emailext(
-                subject: "CI/CD Pipeline Failure: ${IMAGE_NAME}:${env.BUILD_NUMBER}",
-                body: "The CI/CD pipeline failed. Review logs and Trivy report for details.",
-                to: 'koussayfattoum480@gmail.com',
-                attachmentsPattern: 'trivy_report.json'
-            )
-        }
+    success {
+        emailext(
+            subject: "Pipeline Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            body: """
+            The pipeline completed successfully.
+
+            Job: ${env.JOB_NAME}
+            Build Number: ${env.BUILD_NUMBER}
+            Build URL: ${env.BUILD_URL}
+
+            Trivy scan results are attached.
+            """,
+            to: 'koussayfattoum480@gmail.com',
+            attachmentsPattern: 'trivy_report.json'
+        )
     }
+    failure {
+        emailext(
+            subject: "Pipeline Failure: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            body: """
+            The pipeline failed.
+
+            Job: ${env.JOB_NAME}
+            Build Number: ${env.BUILD_NUMBER}
+            Build URL: ${env.BUILD_URL}
+
+            Please review the logs and Trivy scan results.
+            """,
+            to: 'koussayfattoum480@gmail.com',
+            attachmentsPattern: 'trivy_report.json'
+        )
+    }
+}
+
 }
