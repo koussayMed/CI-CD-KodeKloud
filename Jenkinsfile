@@ -78,41 +78,36 @@ pipeline {
     }
 
     post {
-    success {
-        emailext(
-            subject: "Pipeline Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-            body: """
-            Hi, I'm Koussay.
+    always {
+        script {
+            def jobName = env.JOB_NAME
+            def buildNumber = env.BUILD_NUMBER
+            def pipelineStatus = currentBuild.result ?: 'UNKNOWN'
+            def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
 
-            The pipeline completed successfully.
+            def body = """<html>
+                <body>
+                    <div style="border: 4px solid ${bannerColor}; padding: 10px;">
+                        <h2>${jobName} - Build ${buildNumber}</h2>
+                        <div style="background-color: ${bannerColor}; padding: 10px;">
+                            <h3 style="color: white;">Pipeline Status: ${pipelineStatus.toUpperCase()}</h3>
+                        </div>
+                        <p>Check the <a href="${BUILD_URL}">console output</a>.</p>
+                        <p>Trivy scan results are attached.</p>
+                    </div>
+                </body>
+            </html>"""
 
-            Job: ${env.JOB_NAME}
-            Build Number: ${env.BUILD_NUMBER}
-            Build URL: ${env.BUILD_URL}
-
-            Trivy scan results are attached.
-            """,
-            from: 'koussayfattoum480@gmail.com',
-            to: 'koussayfattoum480@gmail.com',
-            attachmentsPattern: 'trivy_report.json'
-        )
-    }
-    failure {
-        emailext(
-            subject: "Pipeline Failure: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-            body: """
-            The pipeline failed.
-
-            Job: ${env.JOB_NAME}
-            Build Number: ${env.BUILD_NUMBER}
-            Build URL: ${env.BUILD_URL}
-
-            Please review the logs and Trivy scan results.
-            """,
-            from: 'koussayfattoum480@gmail.com',
-            to: 'koussayfattoum480@gmail.com',
-            attachmentsPattern: 'trivy_report.json'
-        )
+            emailext (
+                subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
+                body: body,
+                to: 'koussayfattoum480@gmail.com',
+                from: 'koussayfattoum480@gmail.com',
+                mimeType: 'text/html',
+                attachmentsPattern: 'trivy_report.json'
+            )
+            cleanWs()
+        }
     }
 }
 
