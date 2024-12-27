@@ -15,7 +15,7 @@ pipeline {
 
         stage('Setup') {
             steps {
-                // Install dependencies from requirements.txt (which should include Flask)
+                // Install dependencies
                 sh "pip install -r requirements.txt"
             }
         }
@@ -27,7 +27,7 @@ pipeline {
                 python3 -m venv venv
                 . venv/bin/activate
 
-                # Install necessary Python dependencies (including Flask)
+                # Install dependencies
                 pip install -r requirements.txt
 
                 # Run the tests
@@ -55,7 +55,12 @@ pipeline {
 
         stage('Trivy Scan') {
             steps {
-                sh "trivy image --format json --output trivy_report.json ${IMAGE_TAG}"
+                script {
+                    def scanResult = sh(script: "trivy image --severity CRITICAL --exit-code 1 --format json --output trivy_report.json ${IMAGE_TAG}", returnStatus: true)
+                    if (scanResult != 0) {
+                        error("Trivy scan found critical vulnerabilities. Check 'trivy_report.json' for details.")
+                    }
+                }
             }
         }
 
@@ -66,14 +71,33 @@ pipeline {
             }
         }
     }
+
     post {
+        always {
+            echo "Cleaning up workspace..."
+            sh 'docker system prune -f'
+        }
         success {
-            // Send email notification on successful build
             emailext(
-                subject: "CI/CD Pipeline - Build Successful for ${IMAGE_NAME}:${env.BUILD_NUMBER}",
-                body: "The build for image ${IMAGE_NAME}:${env.BUILD_NUMBER} has completed successfully. \n Trivy scan report attached.",
+                subject: "CI/CD Pipeline Success: ${IMAGE_NAME}:${env.BUILD_NUMBER}",
+                body: """
+                The CI/CD pipeline completed successfully for image: ${IMAGE_TAG}.
+
+                Trivy scan results are attached. Please review them for any non-critical issues.
+                """,
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']],
                 attachmentsPattern: 'trivy_report.json'
+            )
+        }
+        failure {
+            emailext(
+                subject: "CI/CD Pipeline Failure: ${IMAGE_NAME}:${env.BUILD_NUMBER}",
+                body: """
+                The CI/CD pipeline failed during execution. 
+
+                Please check the logs for further details.
+                """,
+                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
         }
     }
