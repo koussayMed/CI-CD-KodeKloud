@@ -53,16 +53,21 @@ pipeline {
             }
         }
 
-        stage('Trivy Scan') {
+       stage('Trivy Scan') {
             steps {
                 script {
-                    def scanStatus = sh(script: "trivy image --format json --output trivy_report.json ${IMAGE_TAG}", returnStatus: true)
+                    def scanStatus = sh(script: "trivy image --scanners vuln --format json --output trivy_report.json ${IMAGE_TAG}", returnStatus: true)
                     if (scanStatus != 0) {
-                        echo "Trivy scan found critical vulnerabilities. Check 'trivy_report.json' for details."
+                        echo "Trivy scan found vulnerabilities. Here's a summary:"
+                        sh "trivy image --scanners vuln ${IMAGE_TAG}"
+                        error "Trivy scan failed. Check 'trivy_report.json' for detailed results."
+                    } else {
+                        echo "Trivy scan completed successfully with no vulnerabilities."
                     }
                 }
             }
         }
+
 
 
         stage('Push Docker Image') {
@@ -80,24 +85,25 @@ pipeline {
             body: """
             The CI/CD pipeline completed successfully for image: ${IMAGE_TAG}.
 
-            Trivy scan results are attached. Please review them for any non-critical issues.
+            Trivy scan results are attached for review.
             """,
-            to: 'koussayfattoum480@gmail.com', // Explicit recipient
+            to: 'koussayfattoum480@gmail.com',
             attachmentsPattern: 'trivy_report.json'
-            )
-        }
+        )
+    }
     failure {
         emailext(
             subject: "CI/CD Pipeline Failure: ${IMAGE_NAME}:${env.BUILD_NUMBER}",
             body: """
-            The CI/CD pipeline failed during execution.
+            The CI/CD pipeline failed. Please review the logs and Trivy scan report for details.
 
-            Please check the logs and Trivy scan report for details.
+            Check 'trivy_report.json' for vulnerability information.
             """,
-            to: 'koussayfattoum480@gmail.com', // Explicit recipient
+            to: 'koussayfattoum480@gmail.com',
             attachmentsPattern: 'trivy_report.json'
-            )
-        }
+        )
     }
+}
+
 
 }
