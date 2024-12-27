@@ -77,7 +77,7 @@ pipeline {
         }
     }
 
-    post {
+post {
     always {
         script {
             def jobName = env.JOB_NAME
@@ -101,7 +101,7 @@ pipeline {
             emailext (
                 subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
                 body: body,
-                to: 'koussayfattoum480@gmail.com',
+                to: 'koussay.fattoum@outlook.com',
                 from: 'koussayfattoum480@gmail.com',
                 mimeType: 'text/html',
                 attachmentsPattern: 'trivy_report.json'
@@ -110,6 +110,4 @@ pipeline {
         }
     }
 }
-
-
 }
