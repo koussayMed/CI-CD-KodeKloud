@@ -1,32 +1,48 @@
 pipeline {
     agent any
     environment {
-        IMAGE_NAME = 'koussayfattoum480432/jenkins-flask-app:latest'
-        }
+        IMAGE_NAME = 'koussayfattoum480432/jenkins-flask-app'
+        IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
+        LATEST_TAG = "${IMAGE_NAME}:latest"
+    }
+    parameters {
+        string(name: 'BRANCH', defaultValue: 'main', description: 'Branch to build from')
+    }
     stages {
-
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/koussayMed/CI-CD-KodeKloud.git', branch: 'main'
-                sh "ls -ltr"
+                script {
+                    echo "Checking out code from branch: ${params.BRANCH}"
+                    git url: 'https://github.com/koussayMed/CI-CD-KodeKloud.git', branch: params.BRANCH
+                }
             }
         }
 
         stage('Setup') {
             steps {
-                sh "pip install --upgrade pip"
-                sh "pip install -r requirements.txt"
+                sh """
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                """
             }
         }
 
         stage('Test') {
             steps {
-                sh '''
-                python3 -m venv venv
-                . venv/bin/activate
-                pip install -r requirements.txt
-                pytest
-                '''
+                script {
+                    echo "Running tests..."
+                    sh """
+                        . venv/bin/activate
+                        pytest --junitxml=test-results.xml
+                    """
+                }
+            }
+            post {
+                always {
+                    junit 'test-results.xml' // Publish test results
+                }
             }
         }
 
@@ -35,24 +51,29 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh 'echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin'
                 }
-                echo 'Login successfully'
+                echo 'Docker login successful'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t ${IMAGE_NAME} .'
-                echo "Docker image built successfully"
-                sh "docker images"
+                script {
+                    echo "Building Docker image with tags: ${IMAGE_TAG} and ${LATEST_TAG}"
+                    sh """
+                        docker build -t ${IMAGE_TAG} -t ${LATEST_TAG} .
+                        docker images
+                    """
+                }
             }
         }
 
         stage('Trivy Scan') {
             steps {
                 script {
-                    def scanStatus = sh(script: "trivy image --scanners vuln --timeout 5m --format json --output trivy_report.json ${IMAGE_NAME}", returnStatus: true)
+                    echo "Running Trivy security scan on ${IMAGE_TAG}"
+                    def scanStatus = sh(script: "trivy image --scanners vuln --timeout 5m --severity HIGH,CRITICAL --format json --output trivy_report.json ${IMAGE_TAG}", returnStatus: true)
                     if (scanStatus != 0) {
-                        echo "Trivy scan found vulnerabilities. Review 'trivy_report.json'."
+                        echo "Trivy scan found vulnerabilities. See 'trivy_report.json'."
                         error "Trivy scan failed with vulnerabilities."
                     }
                 }
@@ -62,47 +83,41 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    try {
-                        sh 'docker push ${IMAGE_NAME}'
-                        echo "Docker image pushed successfully"
-                    } catch (Exception e) {
-                        echo "Failed to push Docker image: ${e.getMessage()}"
-                    }
+                    echo "Pushing Docker image to Docker Hub: ${IMAGE_TAG} and ${LATEST_TAG}"
+                    sh """
+                        docker push ${IMAGE_TAG}
+                        docker push ${LATEST_TAG}
+                    """
+                }
+            }
+        }
+
+        stage('Cleanup Docker Images') {
+            steps {
+                script {
+                    echo "Cleaning up old Docker images..."
+                    sh """
+                        docker rmi -f ${IMAGE_TAG} || true
+                        docker image prune -f
+                    """
                 }
             }
         }
     }
 
-  post {
+    post {
         always {
+            cleanWs() // Cleanup workspace after the pipeline
+        }
+        success {
             script {
-                def jobName = env.JOB_NAME
-                def buildNumber = env.BUILD_NUMBER
-                def pipelineStatus = currentBuild.result ?: 'SUCCESS'
-                def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
-
-                def body = """<html>
-                <body>
-                    <div style="border: 4px solid ${bannerColor}; padding: 10px;">
-                        <h2>${jobName} - Build ${buildNumber}</h2>
-                        <div style="background-color: ${bannerColor}; padding: 10px;">
-                            <h3 style="color: white;">Pipeline Status: ${pipelineStatus.toUpperCase()}</h3>
-                        </div>
-                        <p>Check the <a href="${env.BUILD_URL}">console output</a>.</p>
-                    </div>
-                </body>
-                </html>"""
-
-                emailext (
-                    subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
-                    body: body,
-                    to: 'koussayfattoum480@gmail.com',
-                    from: 'koussayfattoum480@gmail.com',
-                    mimeType: 'text/html'
-                )
+                echo "Pipeline completed successfully!"
             }
-            cleanWs()
+        }
+        failure {
+            script {
+                echo "Pipeline failed. Please review the logs."
+            }
         }
     }
 }
-
