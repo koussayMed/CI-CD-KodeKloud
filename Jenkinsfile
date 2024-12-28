@@ -101,10 +101,10 @@ post {
             emailext (
                 subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
                 body: body,
-                to: 'koussay.fattoum@outlook.com',
+                to: 'koussayfattoum480@gmail.com',
                 from: 'koussayfattoum480@gmail.com',
                 mimeType: 'text/html',
-                attachmentsPattern: 'trivy_report.json'
+                
             )
             cleanWs()
         }
