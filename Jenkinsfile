@@ -1,12 +1,8 @@
 pipeline {
     agent any
     environment {
-        IMAGE_NAME = 'koussayfattoum480432/jenkins-flask-app'
-        IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
-    }
-    options {
-        retry(2) // Retry pipeline up to 2 times on failure
-    }
+        IMAGE_NAME = 'koussayfattoum480432/jenkins-flask-app:latest'
+        }
     stages {
 
         stage('Checkout') {
@@ -45,7 +41,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t ${IMAGE_TAG} .'
+                sh 'docker build -t ${IMAGE_NAME} .'
                 echo "Docker image built successfully"
                 sh "docker images"
             }
@@ -54,7 +50,7 @@ pipeline {
         stage('Trivy Scan') {
             steps {
                 script {
-                    def scanStatus = sh(script: "trivy image --scanners vuln --timeout 5m --format json --output trivy_report.json ${IMAGE_TAG}", returnStatus: true)
+                    def scanStatus = sh(script: "trivy image --scanners vuln --timeout 5m --format json --output trivy_report.json ${IMAGE_NAME}", returnStatus: true)
                     if (scanStatus != 0) {
                         echo "Trivy scan found vulnerabilities. Review 'trivy_report.json'."
                         error "Trivy scan failed with vulnerabilities."
@@ -67,7 +63,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh 'docker push ${IMAGE_TAG}'
+                        sh 'docker push ${IMAGE_NAME}'
                         echo "Docker image pushed successfully"
                     } catch (Exception e) {
                         echo "Failed to push Docker image: ${e.getMessage()}"
@@ -77,37 +73,36 @@ pipeline {
         }
     }
 
-post {
-    always {
-        script {
-            def jobName = env.JOB_NAME
-            def buildNumber = env.BUILD_NUMBER
-            def pipelineStatus = currentBuild.result ?: 'UNKNOWN'
-            def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
+  post {
+        always {
+            script {
+                def jobName = env.JOB_NAME
+                def buildNumber = env.BUILD_NUMBER
+                def pipelineStatus = currentBuild.result ?: 'SUCCESS'
+                def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
 
-            def body = """<html>
+                def body = """<html>
                 <body>
                     <div style="border: 4px solid ${bannerColor}; padding: 10px;">
                         <h2>${jobName} - Build ${buildNumber}</h2>
                         <div style="background-color: ${bannerColor}; padding: 10px;">
                             <h3 style="color: white;">Pipeline Status: ${pipelineStatus.toUpperCase()}</h3>
                         </div>
-                        <p>Check the <a href="${BUILD_URL}">console output</a>.</p>
-                        <p>Trivy scan results are attached.</p>
+                        <p>Check the <a href="${env.BUILD_URL}">console output</a>.</p>
                     </div>
                 </body>
-            </html>"""
+                </html>"""
 
-            emailext (
-                subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
-                body: body,
-                to: 'koussayfattoum480@gmail.com',
-                from: 'koussayfattoum480@gmail.com',
-                mimeType: 'text/html',
-                
-            )
+                emailext (
+                    subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
+                    body: body,
+                    to: 'koussayfattoum480@gmail.com',
+                    from: 'koussayfattoum480@gmail.com',
+                    mimeType: 'text/html'
+                )
+            }
             cleanWs()
         }
     }
 }
-}
+
