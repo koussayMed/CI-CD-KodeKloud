@@ -1,7 +1,7 @@
 pipeline {
     agent any
     tools{
-        sonarScanner ='sonar-scanner'
+        sonarScanner 'sonar-scanner'
     }
     environment {
         IMAGE_NAME = 'koussayfattoum480432/jenkins-flask-app'
