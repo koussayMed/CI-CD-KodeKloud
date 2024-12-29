@@ -19,14 +19,14 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    // Use the Sonar Scanner tool
-                    def scannerHome = tool name: 'sonar-scanner'
+                    
                     withSonarQubeEnv('sonar-server') { // Replace 'sonar-server' with your SonarQube server name in Jenkins
                         sh """
-                            sonar-scanner -Dsonar.projectKey=cicd \
-                                          -Dsonar.sources=. \
-                                          -Dsonar.host.url=http://192.168.133.134:9000 \
-                                          -Dsonar.login=sqp_978d0edd0daa4bba557526bcd0bce907aafdd8cb
+                            sonar-scanner \
+                            -Dsonar.projectKey=ci-cd \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=http://192.168.133.134:9000 \
+                            -Dsonar.login=squ_708e10578a9fd4b64204978a4ff9a745d6426090
                         """
                     }
                 }
