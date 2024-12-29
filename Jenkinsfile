@@ -4,10 +4,10 @@ pipeline {
         IMAGE_NAME = 'koussayfattoum480432/jenkins-flask-app'
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
         LATEST_TAG = "${IMAGE_NAME}:latest"
+        SONAR_SCANNER_HOME = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+        SONARQUBE_ENV = credentials('kodekloud')    
     }
-    parameters {
-        string(name: 'BRANCH', defaultValue: 'main', description: 'Branch to build from')
-    }
+    
     stages {
         stage('Checkout') {
             steps {
