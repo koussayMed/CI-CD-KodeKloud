@@ -16,22 +16,21 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage("SonarQube Code Analysis") {
             steps {
                 script {
-                    
-                    withSonarQubeEnv('sonar-server') { // Replace 'sonar-server' with your SonarQube server name in Jenkins
-                        sh """
-                            sonar-scanner \
-                            -Dsonar.projectKey=ci-cd \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=http://192.168.133.134:9000 \
-                            -Dsonar.login=squ_708e10578a9fd4b64204978a4ff9a745d6426090
-                        """
+                // Use the SonarQube Scanner with credentials
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                // Set up the SonarQube command with necessary parameters
+                def sonarScannerCommand = "${SONAR_SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectName=cicd -Dsonar.sources=. -Dsonar.projectKey=cicd -Dsonar.host.url=http://192.168.133.134:9000 -Dsonar.login=\$SONAR_TOKEN"
+                
+                // Execute the SonarQube scanner command
+                sh script: sonarScannerCommand, returnStatus: true
                     }
                 }
             }
         }
+
 
         stage('Setup') {
             steps {
