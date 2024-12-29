@@ -4,8 +4,7 @@ pipeline {
         IMAGE_NAME = 'koussayfattoum480432/jenkins-flask-app'
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
         LATEST_TAG = "${IMAGE_NAME}:latest"
-        SONAR_SCANNER_HOME = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-           
+        SONARQUBE_ENV = credentialsId('kodekloud')
     }
     
     stages {
@@ -19,14 +18,23 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            steps{
-                def scannerHome = tool 'sonar-scanner';
-                withSonarQubeEnv() {
-                sh "${scannerHome}/bin/sonar-scanner"
+            steps {
+                script {
+                    // Use the Sonar Scanner tool
+                    def scannerHome = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                    
+                    // Run SonarQube analysis
+                    withSonarQubeEnv('sonar-server') { // Replace 'sonar-server' with your SonarQube server name in Jenkins
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=kodekloud \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=http://192.168.133.134:9000 \
+                            -Dsonar.login=${SONARQUBE_ENV}
+                        """
+                    }
                 }
-
             }
-            
         }
 
         stage('Setup') {
