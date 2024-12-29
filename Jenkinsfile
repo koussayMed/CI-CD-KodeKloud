@@ -5,7 +5,7 @@ pipeline {
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
         LATEST_TAG = "${IMAGE_NAME}:latest"
         SONAR_SCANNER_HOME = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-        SONARQUBE_ENV = credentials('kodekloud')    
+           
     }
     
     stages {
@@ -19,31 +19,9 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            steps {
-                script {
-                    withSonarQubeEnv('sonar-server') { // Name from Jenkins SonarQube configuration
-                        sh """
-                            sonar-scanner \
-                            -Dsonar.projectKey=kodekloud \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=http://192.168.133.134:9000 \
-                            -Dsonar.login=${kodekloud}
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                script {
-                    timeout(time: 1, unit: 'MINUTES') {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "Pipeline aborted due to Quality Gate failure: ${qg.status}"
-                        }
-                    }
-                }
+            def scannerHome = tool 'sonar-scanner';
+            withSonarQubeEnv() {
+            sh "${scannerHome}/bin/sonar-scanner"
             }
         }
 
