@@ -1,7 +1,8 @@
 pipeline {
     agent any
-    tools{
-        sonarScanner 'sonar-scanner'
+    tools {
+        // Use the correct tool type for SonarQube
+        sonar 'SonarQubeScanner'  // This is the correct tool type for SonarQube in Jenkins
     }
     environment {
         IMAGE_NAME = 'koussayfattoum480432/jenkins-flask-app'
@@ -13,29 +14,28 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    
-                    git url: 'https://github.com/koussayMed/CI-CD-KodeKloud.git', branch:'main'
+                    git url: 'https://github.com/koussayMed/CI-CD-KodeKloud.git', branch: 'main'
                 }
             }
         }
 
         stage("SonarQube Code Analysis") {
-    steps {
-        script {
-            // Use the SonarQube Scanner tool configured in Jenkins
-            def sonarScanner = tool name: 'sonar-scanner', type: 'SonarQubeScanner'
-            
-            // Set the SonarQube scanner command with the path to the scanner
-            def sonarScannerCommand = "${sonarScanner}/bin/sonar-scanner -Dsonar.projectName=cicd -Dsonar.sources=. -Dsonar.projectKey=cicd -Dsonar.host.url=http://192.168.133.134:9000 -Dsonar.login=squ_708e10578a9fd4b64204978a4ff9a745d6426090"
-            
-            // Debug: print the sonarScannerCommand to ensure it's correct
-            echo "Running SonarQube Scanner with the following command: ${sonarScannerCommand}"
-            
-            // Execute the SonarQube scanner command
-            sh script: sonarScannerCommand, returnStatus: true
+            steps {
+                script {
+                    // Use the SonarQube Scanner tool configured in Jenkins
+                    def sonarScanner = tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                    
+                    // Set the SonarQube scanner command with the path to the scanner
+                    def sonarScannerCommand = "${sonarScanner}/bin/sonar-scanner -Dsonar.projectName=cicd -Dsonar.sources=. -Dsonar.projectKey=cicd -Dsonar.host.url=http://192.168.133.134:9000 -Dsonar.login=squ_708e10578a9fd4b64204978a4ff9a745d6426090"
+                    
+                    // Debug: print the sonarScannerCommand to ensure it's correct
+                    echo "Running SonarQube Scanner with the following command: ${sonarScannerCommand}"
+                    
+                    // Execute the SonarQube scanner command
+                    sh script: sonarScannerCommand, returnStatus: true
+                }
+            }
         }
-    }
-}
 
 
 
