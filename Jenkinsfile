@@ -10,8 +10,8 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    echo "Checking out code from branch: ${params.BRANCH}"
-                    git url: 'https://github.com/koussayMed/CI-CD-KodeKloud.git', branch: params.BRANCH
+                    
+                    git url: 'https://github.com/koussayMed/CI-CD-KodeKloud.git', branch:'main'
                 }
             }
         }
