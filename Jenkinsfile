@@ -4,7 +4,6 @@ pipeline {
         IMAGE_NAME = 'koussayfattoum480432/jenkins-flask-app'
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
         LATEST_TAG = "${IMAGE_NAME}:latest"
-        
     }
     
     stages {
@@ -25,11 +24,12 @@ pipeline {
                     
                     // Run SonarQube analysis
                     withSonarQubeEnv('sonar-server') { // Replace 'sonar-server' with your SonarQube server name in Jenkins
-                       sonar-scanner \
-                        -Dsonar.projectKey=cicd \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=http://192.168.133.134:9000 \
-                        -Dsonar.login=sqp_978d0edd0daa4bba557526bcd0bce907aafdd8cb
+                        sh """
+                            sonar-scanner -Dsonar.projectKey=cicd \
+                                          -Dsonar.sources=. \
+                                          -Dsonar.host.url=http://192.168.133.134:9000 \
+                                          -Dsonar.login=sqp_978d0edd0daa4bba557526bcd0bce907aafdd8cb
+                        """
                     }
                 }
             }
