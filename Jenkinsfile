@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    tools{
+        sonarScanner ='sonar-scanner'
+    }
     environment {
         IMAGE_NAME = 'koussayfattoum480432/jenkins-flask-app'
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
