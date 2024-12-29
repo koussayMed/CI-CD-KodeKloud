@@ -20,9 +20,7 @@ pipeline {
             steps {
                 script {
                     // Use the Sonar Scanner tool
-                    def scannerHome = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-                    
-                    // Run SonarQube analysis
+                    def scannerHome = tool name: 'sonar-scanner'
                     withSonarQubeEnv('sonar-server') { // Replace 'sonar-server' with your SonarQube server name in Jenkins
                         sh """
                             sonar-scanner -Dsonar.projectKey=cicd \
