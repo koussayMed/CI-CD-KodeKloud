@@ -2,7 +2,7 @@ pipeline {
     agent any
     tools {
         // Use the correct tool type for SonarQube
-        sonar 'SonarQubeScanner'  // This is the correct tool type for SonarQube in Jenkins
+        SonarQube 'SonarQubeScanner'  // This is the correct tool type for SonarQube in Jenkins
     }
     environment {
         IMAGE_NAME = 'koussayfattoum480432/jenkins-flask-app'
