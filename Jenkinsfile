@@ -18,6 +18,35 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    withSonarQubeEnv('sonar-server') { // Name from Jenkins SonarQube configuration
+                        sh """
+                            sonar-scanner \
+                            -Dsonar.projectKey=kodekloud \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=http://192.168.133.134:9000 \
+                            -Dsonar.login=${kodekloud}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    timeout(time: 1, unit: 'MINUTES') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Pipeline aborted due to Quality Gate failure: ${qg.status}"
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Setup') {
             steps {
                 sh """
@@ -74,6 +103,7 @@ pipeline {
                     def scanStatus = sh(script: "trivy image --scanners vuln --timeout 5m --severity HIGH,CRITICAL --format json --output trivy_report.json ${IMAGE_TAG}", returnStatus: true)
                     if (scanStatus != 0) {
                         echo "Trivy scan found vulnerabilities. See 'trivy_report.json'."
+                        archiveArtifacts artifacts: 'trivy_report.json', allowEmptyArchive: true
                         error "Trivy scan failed with vulnerabilities."
                     }
                 }
