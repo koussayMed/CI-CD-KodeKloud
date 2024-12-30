@@ -19,6 +19,7 @@ pipeline {
         stage("SonarQube Code Analysis") {
             steps {
                 script {
+                     withSonarQubeEnv('SonarQube') {
                     // Use the SonarQube Scanner tool configured in Jenkins
                     def sonarScanner = tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                     
@@ -32,6 +33,7 @@ pipeline {
                     sh script: sonarScannerCommand, returnStatus: true
                 }
             }
+        }
         }
         
         stage('Quality Gate') {
