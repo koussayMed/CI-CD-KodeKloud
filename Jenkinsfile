@@ -122,18 +122,7 @@ pipeline {
             }
         }
 
-        // Kubernetes Deployment Stage
-        stage('Set up Kubernetes Context') {
-            steps {
-                script {
-                    // Retrieve the kubeconfig stored as a secret text
-                    withCredentials([string(credentialsId: "${KUBERNETES_CREDENTIALS}", variable: 'KUBECONFIG_CONTENT')]) {
-                       
-                         sh 'kubectl config get-contexts --kubeconfig /tmp/kubeconfig'
-                    }
-                }
-            }
-        }
+        
 
         stage('Deploy to AKS') {
             steps {
@@ -146,16 +135,7 @@ pipeline {
             }
         }
 
-        stage('Verify Deployment') {
-            steps {
-                script {
-                    // Verify the deployment and check the pods running in the AKS cluster
-                    echo "Verifying deployment in AKS..."
-                    sh 'kubectl get pods --kubeconfig /tmp/kubeconfig'
-                    sh 'kubectl get services --kubeconfig /tmp/kubeconfig'
-                }
-            }
-        }
+        
     }
 
     post {
