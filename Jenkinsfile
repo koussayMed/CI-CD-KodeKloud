@@ -72,12 +72,14 @@ pipeline {
             }
         }
 
-        // Skip Build Docker Image and use the already built image
-        stage('Use Pre-Built Docker Image') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    echo "Using pre-built Docker image with tag: ${LATEST_TAG}"
-                    // No need to build the Docker image, it is already available
+                    echo "Building Docker image with tags: ${IMAGE_TAG} and ${LATEST_TAG}"
+                    sh """
+                        docker build -t ${IMAGE_TAG} -t ${LATEST_TAG} .
+                        docker images
+                    """
                 }
             }
         }
@@ -85,8 +87,8 @@ pipeline {
         stage('Trivy Scan') {
             steps {
                 script {
-                    echo "Running Trivy security scan on ${LATEST_TAG}"
-                    def scanStatus = sh(script: "trivy image --scanners vuln --timeout 5m --severity HIGH,CRITICAL --format json --output trivy_report.json ${LATEST_TAG}", returnStatus: true)
+                    echo "Running Trivy security scan on ${IMAGE_TAG}"
+                    def scanStatus = sh(script: "trivy image --scanners vuln --timeout 5m --severity HIGH,CRITICAL --format json --output trivy_report.json ${IMAGE_TAG}", returnStatus: true)
                     if (scanStatus != 0) {
                         echo "Trivy scan found vulnerabilities. See 'trivy_report.json'."
                         archiveArtifacts artifacts: 'trivy_report.json', allowEmptyArchive: true
@@ -99,8 +101,9 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    echo "Pushing Docker image to Docker Hub: ${LATEST_TAG}"
+                    echo "Pushing Docker image to Docker Hub: ${IMAGE_TAG} and ${LATEST_TAG}"
                     sh """
+                        docker push ${IMAGE_TAG}
                         docker push ${LATEST_TAG}
                     """
                 }
@@ -112,7 +115,7 @@ pipeline {
                 script {
                     echo "Cleaning up old Docker images..."
                     sh """
-                        docker rmi -f ${LATEST_TAG} || true
+                        docker rmi -f ${IMAGE_TAG} || true
                         docker image prune -f
                     """
                 }
