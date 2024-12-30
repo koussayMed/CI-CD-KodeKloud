@@ -128,14 +128,8 @@ pipeline {
                 script {
                     // Retrieve the kubeconfig stored as a secret text
                     withCredentials([string(credentialsId: "${KUBERNETES_CREDENTIALS}", variable: 'KUBECONFIG_CONTENT')]) {
-                        // Write the kubeconfig content to a temporary file
-                        writeFile file: '/tmp/kubeconfig', text: "${KUBECONFIG_CONTENT}"
-
-                        // Set the KUBECONFIG environment variable to point to the temporary kubeconfig file
-                        sh 'export KUBECONFIG=/tmp/kubeconfig'
-
-                        // Verify the Kubernetes cluster context
-                        sh 'kubectl config get-contexts --kubeconfig /tmp/kubeconfig'
+                       
+                         sh 'kubectl config get-contexts --kubeconfig /tmp/kubeconfig'
                     }
                 }
             }
@@ -146,10 +140,8 @@ pipeline {
                 script {
                     // Apply Kubernetes deployment YAML file to AKS cluster
                     echo "Deploying application to AKS..."
-                    sh 'kubectl apply -f k8s/deployment.yaml --kubeconfig /tmp/kubeconfig'
+                    sh 'kubectl apply -f k8s/deployment.yaml'
 
-                    // Optionally, you can check the deployment status
-                    sh 'kubectl rollout status deployment/my-app --kubeconfig /tmp/kubeconfig'
                 }
             }
         }
