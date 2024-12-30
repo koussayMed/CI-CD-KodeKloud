@@ -1,8 +1,8 @@
 # Use the official Python image with Alpine as the base
 FROM python:3.12-alpine
 
-# Install necessary build dependencies (like gcc, musl-dev, libffi-dev)
-RUN apk add --no-cache gcc musl-dev libffi-dev
+# Update apk repositories and install necessary build dependencies (like gcc, musl-dev, libffi-dev)
+RUN apk update && apk add --no-cache gcc musl-dev libffi-dev
 
 # Set the working directory to /application
 WORKDIR /application
