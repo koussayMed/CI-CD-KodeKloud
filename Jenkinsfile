@@ -127,12 +127,15 @@ pipeline {
         stage('Deploy to AKS') {
             steps {
                 script {
+                    withCredentials([string(credentialsId: "${KUBERNETES_CREDENTIALS}", variable: 'KUBECONFIG_CONTENT')]) {
                     // Apply Kubernetes deployment YAML file to AKS cluster
                     echo "Deploying application to AKS..."
                     sh 'kubectl apply -f deployment.yaml'
 
+                    }
                 }
             }
+        
         }
 
         
