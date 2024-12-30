@@ -19,30 +19,29 @@ pipeline {
 
       
         
-        stage('Set up Kubernetes Context') {
-            steps {
-                script {
-                    // Retrieve the kubeconfig content from Jenkins secret (Kubernetes credentials)
-                    withCredentials([string(credentialsId: "${KUBERNETES_CREDENTIALS}", variable: 'KUBECONFIG_CONTENT')]) {
-                        
-                        // Debug: Print the kubeconfig content to ensure it's being retrieved correctly
-                        echo "Kubeconfig content: ${KUBECONFIG_CONTENT}"
-                        
-                        // Write the kubeconfig content into a temporary file
-                        writeFile file: '/tmp/kubeconfig', text: KUBECONFIG_CONTENT
-                        
-                        // Verify the content written to the file
-                        sh 'cat /tmp/kubeconfig'
-                        
-                        // Set the KUBECONFIG environment variable for kubectl to use the file
-                        sh 'export KUBECONFIG=/tmp/kubeconfig'
+       stage('Set up Kubernetes Context') {
+    steps {
+        script {
+            // Retrieve the kubeconfig content from Jenkins secret (Kubernetes credentials)
+            withCredentials([string(credentialsId: "${KUBERNETES_CREDENTIALS}", variable: 'KUBECONFIG_CONTENT')]) {
+                
+                // Write the kubeconfig content securely into a temporary file
+                writeFile file: '/tmp/kubeconfig', text: KUBECONFIG_CONTENT
+                
+                // Optional: Verify that the kubeconfig file is correctly written (check format, avoid printing secret)
+                // You can skip this step after confirming everything works, it’s just for debugging
+                // sh 'cat /tmp/kubeconfig'
+                
+                // Set the KUBECONFIG environment variable for kubectl to use the file
+                sh 'export KUBECONFIG=/tmp/kubeconfig'
 
-                        // Verify the contexts in the kubeconfig file
-                        sh 'kubectl config get-contexts --kubeconfig /tmp/kubeconfig'
-                    }
-                }
+                // Verify the contexts in the kubeconfig file
+                sh 'kubectl config get-contexts --kubeconfig /tmp/kubeconfig'
             }
         }
+    }
+}
+
 
         stage('Deploy to AKS') {
             steps {
