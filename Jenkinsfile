@@ -129,7 +129,7 @@ pipeline {
                 script {
                     // Apply Kubernetes deployment YAML file to AKS cluster
                     echo "Deploying application to AKS..."
-                    sh 'kubectl apply -f k8s/deployment.yaml'
+                    sh 'kubectl apply -f deployment.yaml'
 
                 }
             }
