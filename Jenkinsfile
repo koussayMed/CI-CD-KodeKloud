@@ -5,6 +5,7 @@ pipeline {
         IMAGE_NAME = 'koussayfattoum480432/jenkins-flask-app'
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
         LATEST_TAG = "${IMAGE_NAME}:latest"
+        KUBERNETES_CREDENTIALS = 'k8s-kubeconfig'  // The ID of the Secret Text credential for kubeconfig
     }
     
     stages {
@@ -19,7 +20,6 @@ pipeline {
         stage("SonarQube Code Analysis") {
             steps {
                 script {
-                    
                     // Use the SonarQube Scanner tool configured in Jenkins
                     def sonarScanner = tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                     
@@ -34,11 +34,7 @@ pipeline {
                 }
             }
         }
-    
         
-      
-
-
         stage('Setup') {
             steps {
                 sh """
@@ -122,6 +118,49 @@ pipeline {
                         docker rmi -f ${IMAGE_TAG} || true
                         docker image prune -f
                     """
+                }
+            }
+        }
+
+        // Kubernetes Deployment Stage
+        stage('Set up Kubernetes Context') {
+            steps {
+                script {
+                    // Retrieve the kubeconfig stored as a secret text
+                    withCredentials([string(credentialsId: "${KUBERNETES_CREDENTIALS}", variable: 'KUBECONFIG_CONTENT')]) {
+                        // Write the kubeconfig content to a temporary file
+                        writeFile file: '/tmp/kubeconfig', text: "${KUBECONFIG_CONTENT}"
+
+                        // Set the KUBECONFIG environment variable to point to the temporary kubeconfig file
+                        sh 'export KUBECONFIG=/tmp/kubeconfig'
+
+                        // Verify the Kubernetes cluster context
+                        sh 'kubectl config get-contexts --kubeconfig /tmp/kubeconfig'
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to AKS') {
+            steps {
+                script {
+                    // Apply Kubernetes deployment YAML file to AKS cluster
+                    echo "Deploying application to AKS..."
+                    sh 'kubectl apply -f k8s/deployment.yaml --kubeconfig /tmp/kubeconfig'
+
+                    // Optionally, you can check the deployment status
+                    sh 'kubectl rollout status deployment/my-app --kubeconfig /tmp/kubeconfig'
+                }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                script {
+                    // Verify the deployment and check the pods running in the AKS cluster
+                    echo "Verifying deployment in AKS..."
+                    sh 'kubectl get pods --kubeconfig /tmp/kubeconfig'
+                    sh 'kubectl get services --kubeconfig /tmp/kubeconfig'
                 }
             }
         }
