@@ -1,25 +1,8 @@
-# Use the official Python image with Alpine as the base
-FROM python:3.12-alpine
-
-# Update apk repositories and install necessary build dependencies (like gcc, musl-dev, libffi-dev)
-RUN apk update && apk add --no-cache gcc musl-dev libffi-dev
-
-# Set the working directory to /application
-WORKDIR /application
-
-# Copy the application code into the container
+FROM python:3.12.0b3-alpine3.18
 COPY . /application
-
-# Copy the requirements.txt file
+WORKDIR /application
 COPY requirements.txt .
-
-# Install pip dependencies with retries for network issues
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt --index-url https://pypi.org/simple/ || \
-    (echo "Retrying pip install..." && sleep 10 && pip install --no-cache-dir -r requirements.txt --index-url https://pypi.org/simple/)
-
-# Expose the application port (5000)
+    pip install --no-cache-dir -r requirements.txt --index-url https://pypi.org/simple/
 EXPOSE 5000
-
-# Command to run the application
 CMD ["python", "app.py"]
