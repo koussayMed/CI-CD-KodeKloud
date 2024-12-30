@@ -122,23 +122,46 @@ pipeline {
             }
         }
 
-        
+        // Kubernetes Deployment Stage
+        stage('Set up Kubernetes Context') {
+            steps {
+                script {
+                    // Retrieve the kubeconfig content from Jenkins secret (Kubernetes credentials)
+                    withCredentials([string(credentialsId: "${KUBERNETES_CREDENTIALS}", variable: 'KUBECONFIG_CONTENT')]) {
+                        
+                        // Write kubeconfig content into a temporary file
+                        writeFile file: '/tmp/kubeconfig', text: KUBECONFIG_CONTENT
+                        
+                        // Set the KUBECONFIG environment variable for kubectl to use the file
+                        sh 'export KUBECONFIG=/tmp/kubeconfig'
+
+                        // Verify the contexts in the kubeconfig file
+                        sh 'kubectl config get-contexts --kubeconfig /tmp/kubeconfig'
+                    }
+                }
+            }
+        }
 
         stage('Deploy to AKS') {
             steps {
                 script {
-                    withCredentials([string(credentialsId: "${KUBERNETES_CREDENTIALS}", variable: 'KUBECONFIG_CONTENT')]) {
                     // Apply Kubernetes deployment YAML file to AKS cluster
                     echo "Deploying application to AKS..."
-                    sh 'kubectl apply -f deployment.yaml'
-
-                    }
+                    sh 'kubectl apply -f k8s/deployment.yaml'
                 }
             }
-        
         }
 
-        
+        stage('Verify Deployment') {
+            steps {
+                script {
+                    // Verify the deployment and check the pods running in the AKS cluster
+                    echo "Verifying deployment in AKS..."
+                    sh 'kubectl get pods --kubeconfig /tmp/kubeconfig'
+                    sh 'kubectl get services --kubeconfig /tmp/kubeconfig'
+                }
+            }
+        }
     }
 
     post {
