@@ -20,6 +20,13 @@ pipeline {
         }
 
       
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    dockerImage = docker.build("kodekloud/${env.BUILD_NUMBER}")
+                }
+            }
+        }
         
        stage('Upload Image to ACR') {
          steps{   
