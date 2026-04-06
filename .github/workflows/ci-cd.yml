@@ -1,0 +1,114 @@
+# .github/workflows/ci-cd.yml
+name: CI/CD Pipeline — Flask DevSecOps
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/flask-devsecops
+  IMAGE_TAG: ${{ secrets.DOCKERHUB_USERNAME }}/flask-devsecops:${{ github.run_number }}
+  LATEST_TAG: ${{ secrets.DOCKERHUB_USERNAME }}/flask-devsecops:latest
+
+jobs:
+
+  # ─────────────────────────────────────────
+  # JOB 1 — Tests & Qualité du code
+  # ─────────────────────────────────────────
+  test:
+    name: Tests & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest flake8
+
+      - name: Lint with flake8
+        run: flake8 app.py --max-line-length=100
+
+      - name: Run tests with pytest
+        run: pytest test_app.py -v
+
+  # ─────────────────────────────────────────
+  # JOB 2 — Sécurité (DevSecOps)
+  # ─────────────────────────────────────────
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build image for scanning
+        run: docker build -t flask-scan:latest .
+
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: flask-scan:latest
+          format: table
+          exit-code: '1'
+          severity: CRITICAL
+          ignore-unfixed: true
+
+  # ─────────────────────────────────────────
+  # JOB 3 — Build & Push Docker Hub
+  # ─────────────────────────────────────────
+  build:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: security
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_TAG }}
+            ${{ env.LATEST_TAG }}
+
+  # ─────────────────────────────────────────
+  # JOB 4 — Deploy sur Minikube (K8S)
+  # ─────────────────────────────────────────
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Update image tag in deployment
+        run: |
+          sed -i "s|IMAGE_PLACEHOLDER|${{ env.IMAGE_TAG }}|g" k8s/deployment.yaml
+
+      - name: Deploy to K8S
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl rollout status deployment/flask-app
