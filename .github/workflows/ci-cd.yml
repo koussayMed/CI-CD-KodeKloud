@@ -94,21 +94,22 @@ jobs:
   # ─────────────────────────────────────────
   deploy:
     name: Deploy to Kubernetes
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-
       - name: Update image tag in deployment
+        shell: powershell
         run: |
-          sed -i "s|IMAGE_PLACEHOLDER|${{ env.IMAGE_TAG }}|g" k8s/deployment.yaml
+          (Get-Content k8s/deployment.yaml) `
+          -replace 'IMAGE_PLACEHOLDER', '${{ env.IMAGE_TAG }}' |
+          Set-Content k8s/deployment.yaml
 
-      - name: Deploy to K8S
+      - name: Deploy to Minikube
+        shell: powershell
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
-          kubectl rollout status deployment/flask-app
+          kubectl rollout status deployment/flask-app-deployment-prod
