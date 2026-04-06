@@ -3,10 +3,11 @@ kind: Service
 metadata:
   name: flask-app-service
 spec:
-  type: LoadBalancer
+  type: NodePort
   selector:
     app: flask-app
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 5000
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+      nodePort: 30080

@@ -15,14 +15,27 @@ spec:
         app: flask-app
     spec:
       containers:
-      - name: flask-app
-        image: koussayfattoum480432/jenkins-flask-app
-        ports:
-        - containerPort: 5000
-        resources:
-          limits:
-            cpu: "1"
-            memory: "500Mi"
-          requests:
-            cpu: "0.5"
-            memory: "200Mi"
+        - name: flask-app
+          image: IMAGE_PLACEHOLDER
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          resources:
+            limits:
+              cpu: "1"
+              memory: "500Mi"
+            requests:
+              cpu: "500m"
+              memory: "200Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
