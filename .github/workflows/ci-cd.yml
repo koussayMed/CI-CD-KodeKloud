@@ -100,6 +100,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set KUBECONFIG
+        run: |
+          echo "Setting KUBECONFIG"
+          $env:KUBECONFIG="C:\Users\ASUS\.kube\config"  
+
       - name: Update image tag in deployment
         shell: powershell
         run: |
