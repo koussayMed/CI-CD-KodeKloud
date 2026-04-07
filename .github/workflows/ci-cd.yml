@@ -134,7 +134,7 @@ jobs:
 
       - name: Update image tag in deployment
         run: |
-          sed -i "s|image: .*|image: ${{ env.IMAGE_TAG }}|g" GitOps/k8s/deployment.yaml
+          sed -i "s|image: .*|image: ${{ env.IMAGE_TAG }}|g" GitOps/k8s/deployment.yml
 
       - name: Commit and push changes
         run: |
