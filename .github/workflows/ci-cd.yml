@@ -138,7 +138,7 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          cd gitops
+          cd GitOps
           git config user.name "koussayMed"
           git config user.email "koussayfattoum480@gmail.com"
           git add .
