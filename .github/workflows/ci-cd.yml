@@ -118,3 +118,29 @@ jobs:
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl rollout status deployment/flask-app-deployment-prod
+
+  update-gitops:
+    name: Update GitOps Repository
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Checkout GitOps repository
+        uses: actions/checkout@v4
+        with:
+          repository: koussayMed/flask-devsecops-gitops
+          token: ${{ secrets.GITOPS_TOKEN }}
+          path: gitops
+
+      - name: Update image tag
+        run: |
+          sed -i "s|IMAGE_PLACEHOLDER|${{ env.IMAGE_TAG }}|g" gitops/k8s/deployment.yaml
+
+      - name: Commit and push changes
+        run: |
+          cd gitops
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "update image to ${{ github.run_number }}" || echo "No changes"
+          git push
