@@ -130,7 +130,7 @@ jobs:
         with:
           repository: koussayMed/flask-devsecops-gitops
           token: ${{ secrets.GITOPS_TOKEN }}
-          path: gitops
+          path: GitOps
 
       - name: Update image tag in deployment
         run: |
